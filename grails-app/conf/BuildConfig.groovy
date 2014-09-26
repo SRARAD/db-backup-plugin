@@ -37,6 +37,7 @@ grails.project.dependency.resolution = {
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
         // runtime 'mysql:mysql-connector-java:5.1.27'
+		runtime "com.amazonaws:aws-java-sdk:1.7.3"
     }
 
     plugins {
@@ -44,5 +45,8 @@ grails.project.dependency.resolution = {
               ":rest-client-builder:1.0.3") {
             export = false
         }
+        compile ":hibernate:3.6.10.17"
+		compile ":quartz:1.0.1"
+		compile ':plugin-config:0.2.0'
     }
 }
