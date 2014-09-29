@@ -3,6 +3,16 @@ DB Backups Plugin
 
 Automatic S3 backups for H2 databases.
 
+## Setup
+
+- Inject the `DBBackupService` and add `DBBackupService.registerListener()` to the end of **BootStrap.groovy**
+- Change the default **stem** bucket name
+- Customize any default configs by following the instructions below
+
+## Use
+
+- The project must be run using `-Daws.accessKeyId` and `-Daws.secretKey` denoting AWS credentials with S3 permissions
+
 ## Config
 
 All config items can be overwritten in Config.groovy by prepending `grails.plugin.dbbackups.` onto the option name.
