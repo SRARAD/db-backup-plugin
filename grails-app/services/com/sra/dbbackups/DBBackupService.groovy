@@ -18,8 +18,6 @@ import com.amazonaws.services.s3.AmazonS3Client
 
 class MyListener implements PostInsertEventListener, PostUpdateEventListener, PostDeleteEventListener, Initializable {
 	
-	def grailsApplication
-	
 	public void onPostInsert(final PostInsertEvent event) {
 		DBBackupService.dirty=true
 		return
@@ -67,23 +65,8 @@ class DBBackupService {
 	}
 	
     def s3Backup() {
-		def stem=grailsApplication.mergedConfig.grails.plugin.dbbackups.stem
-		Environment env=Environment.getCurrent();
-		def bucketName=""
-		switch(env) {
-			case Environment.DEVELOPMENT:
-				bucketName=stem+"-db-backups-dev";
-				break;
-			case Environment.PRODUCTION:
-				bucketName=stem+"-db-backups-prod";
-				break;
-			case Environment.TEST:
-				bucketName=stem+"-db-backups-test";
-				break;
-			default:
-				bucketName=stem+"-db-backups-misc";
-				break;
-		}
+		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
+		String bucketName = getBucketName(stem);
 		def dburl=grailsApplication.mergedConfig.dataSource.url
 		def dbuser=grailsApplication.mergedConfig.dataSource.username
 		def dbpass=grailsApplication.mergedConfig.dataSource.password
@@ -106,4 +89,27 @@ class DBBackupService {
 		temp.delete()
     }
 
+	/**
+	 * Gets the bucket name based on the current environment.
+	 * @param stem - Backup name stem
+	 * @return Bucket name
+	 */
+	String getBucketName(String stem) {
+		String name;
+		Environment env=Environment.getCurrent();
+		switch(env) {
+			case Environment.DEVELOPMENT:
+				name = stem + "-db-backups-dev";
+				break;
+			case Environment.PRODUCTION:
+				name = stem + "-db-backups-prod";
+				break;
+			case Environment.TEST:
+				name = stem + "-db-backups-test";
+				break;
+			default:
+				name = stem + "-db-backups-misc";
+		}
+		name
+	}
 }
