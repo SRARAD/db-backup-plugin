@@ -32,7 +32,19 @@ class DBBackupServiceSpec extends Specification {
 			'Prod' | 'Prod-db-backups-test'
     }
 	
-	void testS3Backup() {
+	void testCreateLocalBackup(String stem, String filename) {
+		when:
+			File temp = service.createLocalBackup(stem);
 		
+		then:
+			temp.exists();
+			temp.name.startsWith(filename);
+			temp.name.endsWith('.sql');
+			temp.delete();
+		
+		where:
+			stem | filename
+			'Test' | 'Testdb'
+			'Test2' | 'Test2db'
 	}
 }

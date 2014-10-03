@@ -66,28 +66,40 @@ class DBBackupService {
 	
     def s3Backup() {
 		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
 		String bucketName = getBucketName(stem);
-		def dburl=grailsApplication.mergedConfig.dataSource.url
-		def dbuser=grailsApplication.mergedConfig.dataSource.username
-		def dbpass=grailsApplication.mergedConfig.dataSource.password
-		Script dbScript=new Script()
-		ByteArrayOutputStream stream=new ByteArrayOutputStream();
+		File temp = createLocalBackup(stem);
 		AmazonS3Client client=new AmazonS3Client() //assume an instance role with ability to create and write S3 buckets
 		if (!client.doesBucketExist(bucketName)) {
 			client.createBucket(bucketName);
 		}
-		File temp=File.createTempFile(stem+"db",".sql")
-		String filename=temp.absolutePath
-		dbScript.execute(dburl,dbuser,dbpass,filename)
 		def formatDate=(new Date()).format("yyMMdd-HHmmss-SSS")
 		def name=stem+"DB"+formatDate+".sql.txt"
-		if (grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose) {
+		if (verbose) {
 			println("DB Backed Up to S3 Bucket:"+bucketName+" File:"+name)
 		}
 		client.putObject(bucketName,name,temp)
 		client.putObject(bucketName,stem+"DBLast.sql.txt",temp)
-		temp.delete()
+		temp.delete();
     }
+	
+	/**
+	 * Creates a temporary local backup.
+	 * @author - Brian Conn (TheConnMan)
+	 * @param stem - Stem file name
+	 * @return Backup file
+	 */
+	File createLocalBackup(String stem) {
+		String dburl=grailsApplication.config.dataSource.url;
+		String dbuser=grailsApplication.config.dataSource.username;
+		String dbpass=grailsApplication.config.dataSource.password;
+		Script dbScript=new Script()
+		ByteArrayOutputStream stream=new ByteArrayOutputStream();
+		File temp=File.createTempFile(stem+"db",".sql")
+		String filename=temp.absolutePath
+		dbScript.execute(dburl,dbuser,dbpass,filename)
+		return temp
+	}
 
 	/**
 	 * Gets the bucket name based on the current environment.
