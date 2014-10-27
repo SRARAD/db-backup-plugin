@@ -128,11 +128,16 @@ class DBBackupService {
 			client=new AmazonS3Client() //assume an instance role with ability to create and write S3 buckets
 		}
 		String bucketName = getBucketName(stem);
-		ObjectMetadata meta=client.getObjectMetadata(bucketName,stem+"DBLast.sql.txt")
-		def size=meta.getInstanceLength()
+		int bufsize=1000000 //1M
+		def size=bufsize
+		try {
+		  ObjectMetadata meta=client.getObjectMetadata(bucketName,stem+"DBLast.sql.txt")
+		  size=meta.getContentLength()
+		} catch (Exception e) {
+		  e.printStackTrace()
+		}
 		S3Object obj=client.getObject(bucketName,stem+"DBLast.sql.txt")
 		InputStream in0=obj.getObjectContent()
-		int bufsize=1000000 //1M
 		if (size<bufsize) bufsize=size //or length of object if smaller
 		byte[] buf=new byte[bufsize]
 		int len=-1
