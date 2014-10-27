@@ -2,6 +2,10 @@ package com.sra.dbbackups
 
 import grails.util.Environment
 
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
+
+import org.apache.commons.codec.binary.Base64
 import org.h2.tools.Script
 import org.hibernate.cfg.Configuration
 import org.hibernate.event.Initializable
@@ -12,64 +16,82 @@ import org.hibernate.event.PostInsertEventListener
 import org.hibernate.event.PostUpdateEvent
 import org.hibernate.event.PostUpdateEventListener
 
-import com.amazonaws.auth.AWSCredentials
-import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.auth.AWSCredentialsProvider
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.AmazonS3EncryptionClient
+import com.amazonaws.services.s3.model.EncryptionMaterials
 
 class MyListener implements PostInsertEventListener, PostUpdateEventListener, PostDeleteEventListener, Initializable {
-	
+
 	public void onPostInsert(final PostInsertEvent event) {
 		DBBackupService.dirty=true
 		return
 	}
-	
+
 	public void onPostUpdate(final PostUpdateEvent event) {
 		DBBackupService.dirty=true
 		return
 	}
-	
+
 	public void onPostDelete(final PostDeleteEvent event) {
 		DBBackupService.dirty=true
 		return
 	}
-	
+
 	public void initialize(final Configuration config) {
 		return
 	}
 }
 
 class DBBackupService {
-	
+
 	def grailsApplication
 	public static boolean dirty=false
-	
+
 	private addEventTypeListener(listeners, listener, type) {
 		def typeProperty = "${type}EventListeners"
 		def typeListeners = listeners."${typeProperty}"
-	
+
 		def expandedTypeListeners = new Object[typeListeners.length + 1]
 		System.arraycopy(typeListeners, 0, expandedTypeListeners, 0, typeListeners.length)
 		expandedTypeListeners[-1] = listener
-	
+
 		listeners."${typeProperty}" = expandedTypeListeners
 	}
-	
+
 	def registerListener() {
 		def listeners = grailsApplication.mainContext.sessionFactory.eventListeners
 		def listener = new MyListener()
-	
+
 		['postInsert', 'postUpdate', 'postDelete'].each({
-		   addEventTypeListener(listeners, listener, it)
+			addEventTypeListener(listeners, listener, it)
 		})
 		DBBackupJob.schedule(grailsApplication.mergedConfig.grails.plugin.dbbackups.interval)
 	}
-	
-    def s3Backup() {
+
+	def s3Backup() {
 		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
 		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
+		boolean encrypt = grailsApplication.mergedConfig.grails.plugin.dbbackups.encrypt;
+		AmazonS3Client client=null;
+		if (encrypt) {
+			def key=grailsApplication.mergedConfig.grails.plugin.dbbackups.key
+			if (key!=null) {
+				SecretKey skey = new SecretKeySpec(Base64.decodeBase64(key.getBytes()), "AES")
+				EncryptionMaterials materials = new EncryptionMaterials(skey)
+				AWSCredentialsProvider credprov=new DefaultAWSCredentialsProviderChain()
+				client = new AmazonS3EncryptionClient(credprov.getCredentials(),materials)
+			} else {
+				println("dbbackups.key must be defined to perform encrypted backups (use grails create-key command to generate one)")
+				println("backup not performed")
+				return
+			}
+		} else {
+			client=new AmazonS3Client() //assume an instance role with ability to create and write S3 buckets
+		}
 		String bucketName = getBucketName(stem);
 		File temp = createLocalBackup(stem);
-		AmazonS3Client client=new AmazonS3Client() //assume an instance role with ability to create and write S3 buckets
 		if (!client.doesBucketExist(bucketName)) {
 			client.createBucket(bucketName);
 		}
@@ -81,8 +103,8 @@ class DBBackupService {
 		client.putObject(bucketName,name,temp)
 		client.putObject(bucketName,stem+"DBLast.sql.txt",temp)
 		temp.delete();
-    }
-	
+	}
+
 	/**
 	 * Creates a temporary local backup.
 	 * @author - Brian Conn (TheConnMan)
