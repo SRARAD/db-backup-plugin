@@ -146,12 +146,13 @@ class DBBackupService {
 		if (outfile.exists()) {
 			outfile.delete()
 		}
+		FileOutputStream outs=new FileOutputStream(outfile)
 		while((len=in0.read(buf,0,bufsize))>-1) {
 			if (len>0) {
-				outfile.write(buf,0,len)
+				outs.write(buf,0,len)
 			}
 		}
-		outfile.close()
+		outs.close()
 		println("Last backup script has been restore to:"+filename)
 	}
 
