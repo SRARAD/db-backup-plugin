@@ -21,6 +21,8 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.AmazonS3EncryptionClient
 import com.amazonaws.services.s3.model.EncryptionMaterials
+import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.services.s3.model.S3Object
 
 class MyListener implements PostInsertEventListener, PostUpdateEventListener, PostDeleteEventListener, Initializable {
 
@@ -103,6 +105,49 @@ class DBBackupService {
 		client.putObject(bucketName,name,temp)
 		client.putObject(bucketName,stem+"DBLast.sql.txt",temp)
 		temp.delete();
+	}
+	
+	def s3RestoreLatest() {
+		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
+		boolean encrypt = grailsApplication.mergedConfig.grails.plugin.dbbackups.encrypt;
+		AmazonS3Client client=null;
+		if (encrypt) {
+			def key=grailsApplication.mergedConfig.grails.plugin.dbbackups.key
+			if (key!=null) {
+				SecretKey skey = new SecretKeySpec(Base64.decodeBase64(key.getBytes()), "AES")
+				EncryptionMaterials materials = new EncryptionMaterials(skey)
+				AWSCredentialsProvider credprov=new DefaultAWSCredentialsProviderChain()
+				client = new AmazonS3EncryptionClient(credprov.getCredentials(),materials)
+			} else {
+				println("dbbackups.key must be defined to perform encrypted backups (use grails create-key command to generate one)")
+				println("restore not performed")
+				return
+			}
+		} else {
+			client=new AmazonS3Client() //assume an instance role with ability to create and write S3 buckets
+		}
+		String bucketName = getBucketName(stem);
+		ObjectMetadata meta=client.getObjectMetadata(bucketName,stem+"DBLast.sql.txt")
+		def size=meta.getInstanceLength()
+		S3Object obj=client.getObject(bucketName,stem+"DBLast.sql.txt")
+		InputStream in0=obj.getObjectContent()
+		int bufsize=1000000 //1M
+		if (size<bufsize) bufsize=size //or length of object if smaller
+		byte[] buf=new byte[bufsize]
+		int len=-1
+		String filename=grailsApplication.parentContext.getResource("restoreDb.sql").file.toString()
+		File outfile=new File(filename)
+		if (outfile.exists()) {
+			outfile.delete()
+		}
+		while((len=in0.read(buf,0,bufsize))>-1) {
+			if (len>0) {
+				outfile.write(buf,0,len)
+			}
+		}
+		outfile.close()
+		println("Last backup script has been restore to:"+filename)
 	}
 
 	/**
