@@ -20,3 +20,10 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 }
+
+def loc = ['../UserConfig.groovy', 'webapps/ROOT/Jenkins.groovy'].grep { new File(it).exists() }.first();
+def config = new ConfigSlurper(grailsSettings.grailsEnv).parse(new File(loc).toURI().toURL())
+
+grails.plugin.dbbackups.encrypt = true
+grails.plugin.dbbackups.stem = "test"
+grails.plugin.dbbackups.key = config.dbbackups.key;
