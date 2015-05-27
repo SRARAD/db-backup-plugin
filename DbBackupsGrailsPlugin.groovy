@@ -28,7 +28,7 @@ class DbBackupsGrailsPlugin {
     def organization = [ name: "SRA", url: "http://www.sra.com/" ]
 
     // Any additional developers beyond the author specified above.
-    def developers = [ [ name: "TheConnMan", email: "brian@theconnman.com" ]]
+    def developers = [[ name: "TheConnMan", email: "brian@theconnman.com" ], [ name: "Ahmad Yasin", email: "ayasein@gmail.com" ]]
 
     // Location of the plugin's issue tracker.
     def issueManagement = [ system: "GitHub", url: "https://github.com/SRARAD/db-backup-plugin/issues" ]
