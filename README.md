@@ -77,3 +77,7 @@ Maximum number of local files before the oldest backups start being deleted.
 The create key script generates an encryption key for storing encrypted files on S3. **We recommend not storing this key in source control. Store it in a local config file which is not checked in.**.
 
 To generate a key run `grails CreateKey` after installing the plugin.
+
+## License
+
+**DB-Backups** has been released under the MIT license by [SRA International, INC](https://www.sra.com/). It was originally developed specifically for the [SRA Rapid Application Development Team](https://github.com/SRARAD).
