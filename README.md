@@ -1,7 +1,7 @@
 DB Backups Plugin
 =========
 
-Automatic S3 backups for H2 databases.
+Automatic S3 and local backups for H2 databases.
 
 ## Setup
 
@@ -12,7 +12,7 @@ Automatic S3 backups for H2 databases.
 
 ## Use
 
-- The project must be run using `-Daws.accessKeyId` and `-Daws.secretKey` denoting AWS credentials with S3 permissions
+- The project must be run using `-Daws.accessKeyId` and `-Daws.secretKey` denoting AWS credentials with S3 permissions if **s3Backups** is set to **true**
 
 ## Config
 
@@ -30,6 +30,12 @@ Boolean for if backup info is printed.
 
 **Default** - false
 
+### s3Backups
+
+Boolean for if backups are made to S3.
+
+**Default** - true
+
 ### stem
 
 Stem bucket name. Bucket name will be **[stem]-db-backups-[environment]** (e.g. **sample-db-backups-dev**).
@@ -45,6 +51,24 @@ Boolean for if backup is encrypted on S3.
 ### key
 
 Encryption key, required for encryption.
+
+### localBackups
+
+Boolean for if local backups are made.
+
+**Default** - false
+
+### localDirectory
+
+Local backup directory location. Relative paths start in the **web-app** folder. Absolute paths can also be used.
+
+**Default** - 'localBackups'
+
+### localFileLimit
+
+Maximum number of local files before the oldest backups start being deleted.
+
+**Default** - 200
 
 ## Scripts
 

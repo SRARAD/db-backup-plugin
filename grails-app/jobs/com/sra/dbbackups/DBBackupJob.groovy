@@ -6,7 +6,7 @@ class DBBackupJob {
 	
 	def checkBackup() {
 		if (DBBackupService.dirty) {
-			DBBackupService.s3Backup()
+			DBBackupService.backup()
 			DBBackupService.dirty=false
 		}
 	}

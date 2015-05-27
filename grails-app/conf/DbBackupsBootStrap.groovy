@@ -10,9 +10,11 @@ class DbBackupsBootStrap {
 			new TestDomain(string: 'String ' + it, integer: it).save(flush: true);
 		}
 		println 'Creating backup'
-		DBBackupService.s3Backup();
+		(1..10).each {
+			DBBackupService.backup();
+		}
 		
-		println 'Creating backup'
-		DBBackupService.s3RestoreLatest();
+		//println 'Creating backup'
+		//DBBackupService.s3RestoreLatest();
 	}
 }

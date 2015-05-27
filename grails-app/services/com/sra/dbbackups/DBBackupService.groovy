@@ -1,5 +1,7 @@
 package com.sra.dbbackups
 
+import java.io.File;
+
 import grails.util.Environment
 
 import javax.crypto.SecretKey
@@ -72,6 +74,64 @@ class DBBackupService {
 		DBBackupJob.schedule(grailsApplication.mergedConfig.grails.plugin.dbbackups.interval)
 	}
 
+	def backup() {
+		boolean s3Backups = grailsApplication.mergedConfig.grails.plugin.dbbackups.s3Backups;
+		boolean localBackups = grailsApplication.mergedConfig.grails.plugin.dbbackups.localBackups;
+		if (s3Backups) {
+			s3Backup()
+		}
+		if (localBackups) {
+			localBackup()
+		}
+	}
+
+	def localBackup() {
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
+		int localFileLimit = grailsApplication.mergedConfig.grails.plugin.dbbackups.localFileLimit
+		File dir=getRootDir()
+		int num=0
+		def toDelete=[]
+		if (dir.listFiles()!=null) {
+			dir.listFiles().sort {a,b ->
+				if (a.lastModified()<b.lastModified()) {
+					return(1)
+				} else if (a.lastModified()>b.lastModified()) {
+					return(-1)
+				} else {
+				    return(0)
+				}
+			}.each {
+				num++
+				if (num>=localFileLimit) {
+					toDelete<<it
+				}
+			}
+		}
+		toDelete.each {
+			if (verbose) {
+				println("Deleting local snapshot:"+it.path)
+			}
+			it.delete()
+		}
+		generateLocalSnapshot(dir.path)
+	}
+
+	def generateLocalSnapshot(dir) {
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
+		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
+		String dburl=grailsApplication.config.dataSource.url;
+		String dbuser=grailsApplication.config.dataSource.username;
+		String dbpass=grailsApplication.config.dataSource.password;
+		Script dbScript=new Script()
+		ByteArrayOutputStream stream=new ByteArrayOutputStream();
+		def formatDate=(new Date()).format("yyMMdd-HHmmss-SSS")
+		def filename=dir+"/"+stem+"DB"+formatDate+".sql.txt"
+		dbScript.execute(dburl,dbuser,dbpass,filename)
+		if (verbose) {
+			println("Made local snapshot:"+filename)
+		}
+	}
+
 	def s3Backup() {
 		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
 		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
@@ -106,7 +166,7 @@ class DBBackupService {
 		client.putObject(bucketName,stem+"DBLast.sql.txt",temp)
 		temp.delete();
 	}
-	
+
 	def s3RestoreLatest() {
 		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
 		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
@@ -131,10 +191,10 @@ class DBBackupService {
 		int bufsize=1000000 //1M
 		def size=bufsize
 		try {
-		  ObjectMetadata meta=client.getObjectMetadata(bucketName,stem+"DBLast.sql.txt")
-		  size=meta.getContentLength()
+			ObjectMetadata meta=client.getObjectMetadata(bucketName,stem+"DBLast.sql.txt")
+			size=meta.getContentLength()
 		} catch (Exception e) {
-		  e.printStackTrace()
+			e.printStackTrace()
 		}
 		S3Object obj=client.getObject(bucketName,stem+"DBLast.sql.txt")
 		InputStream in0=obj.getObjectContent()
@@ -172,6 +232,27 @@ class DBBackupService {
 		String filename=temp.absolutePath
 		dbScript.execute(dburl,dbuser,dbpass,filename)
 		return temp
+	}
+
+	File getRootDir() {
+		String localdir = grailsApplication.mergedConfig.grails.plugin.dbbackups.localDirectory;
+		return (localdir.startsWith("/") || localdir.indexOf(":/") == 1) ? new File(localdir) : grailsApplication.parentContext.getResource(localdir).file;
+	}
+
+	def getLocalFile(String path) {
+		String dir0 = getRootDir().path;
+		File dir;
+		int pos=path.lastIndexOf("/")
+		if (pos>-1) {
+			dir=new File(dir0+"/"+path.substring(0,pos))
+		} else {
+			dir=new File(dir0)
+		}
+		if (!dir.exists()) {
+			dir.mkdirs()
+		}
+		def file=new File(dir0+"/"+path)
+		return(file)
 	}
 
 	/**
