@@ -213,7 +213,7 @@ class DBBackupService {
 			}
 		}
 		outs.close()
-		println("Last backup script has been restore to:"+filename)
+		println("Last backup script has been restored to:"+filename)
 	}
 
 	/**
