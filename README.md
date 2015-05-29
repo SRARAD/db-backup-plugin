@@ -1,7 +1,7 @@
 DB Backups Plugin
 =========
 
-Automatic S3 and local backups for H2 databases.
+Automatic S3 and local backups for H2 databases.  The plugin automatically backs up the database to S3 as a sql script which can restore the database.  This is done at the desired interval (and only when changes are detected).  It provides a simple way to create backups of small H2 databases to an external location.  It can also create the sql script backup to the local filesystem on the machine (and keeps a specified number of the most recent backups).  The latter is useful when certain filesystems are scanned by external backup servers.
 
 ## Setup
 
