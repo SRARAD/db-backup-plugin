@@ -86,6 +86,7 @@ class DBBackupService {
 	}
 
 	def localBackup() {
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
 		int localFileLimit = grailsApplication.mergedConfig.grails.plugin.dbbackups.localFileLimit
 		File dir=getRootDir()
 		int num=0
@@ -107,13 +108,16 @@ class DBBackupService {
 			}
 		}
 		toDelete.each {
-			println("Deleting local snapshot:"+it.path)
+			if (verbose) {
+				println("Deleting local snapshot:"+it.path)
+			}
 			it.delete()
 		}
 		generateLocalSnapshot(dir.path)
 	}
 
 	def generateLocalSnapshot(dir) {
+		boolean verbose = grailsApplication.mergedConfig.grails.plugin.dbbackups.verbose;
 		String stem = grailsApplication.mergedConfig.grails.plugin.dbbackups.stem;
 		String dburl=grailsApplication.config.dataSource.url;
 		String dbuser=grailsApplication.config.dataSource.username;
@@ -123,7 +127,9 @@ class DBBackupService {
 		def formatDate=(new Date()).format("yyMMdd-HHmmss-SSS")
 		def filename=dir+"/"+stem+"DB"+formatDate+".sql.txt"
 		dbScript.execute(dburl,dbuser,dbpass,filename)
-		println("Made local snapshot:"+filename)
+		if (verbose) {
+			println("Made local snapshot:"+filename)
+		}
 	}
 
 	def s3Backup() {
@@ -207,7 +213,7 @@ class DBBackupService {
 			}
 		}
 		outs.close()
-		println("Last backup script has been restore to:"+filename)
+		println("Last backup script has been restored to:"+filename)
 	}
 
 	/**

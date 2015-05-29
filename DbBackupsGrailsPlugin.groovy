@@ -1,6 +1,6 @@
 class DbBackupsGrailsPlugin {
     // the plugin version
-    def version = "0.3"
+    def version = "0.3.1"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "2.3 > *"
     // resources that are excluded from plugin packaging
@@ -11,32 +11,30 @@ class DbBackupsGrailsPlugin {
     ]
 
     // TODO Fill in these fields
-    def title = "DB Backups Plugin" // Headline display name of the plugin
+    def title = "DB Backups" // Headline display name of the plugin
     def author = "Scott Bennett"
-    def authorEmail = "Scott_Bennett@sra.com"
-    def description = '''\
-Automatic S3 backups for H2 databases.
-'''
+    def authorEmail = "swb1701@gmail.com"
+    def description = 'Automatic S3 and local backups for H2 databases.'
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/db-backups"
+    def documentation = "https://github.com/SRARAD/db-backup-plugin"
 
     // Extra (optional) plugin metadata
 
     // License: one of 'APACHE', 'GPL2', 'GPL3'
-//    def license = "APACHE"
+    def license = "MIT"
 
     // Details of company behind the plugin (if there is one)
     def organization = [ name: "SRA", url: "http://www.sra.com/" ]
 
     // Any additional developers beyond the author specified above.
-//    def developers = [ [ name: "Joe Bloggs", email: "joe@bloggs.net" ]]
+    def developers = [[ name: "TheConnMan", email: "brian@theconnman.com" ], [ name: "Ahmad Yasin", email: "ayasein@gmail.com" ]]
 
     // Location of the plugin's issue tracker.
-//    def issueManagement = [ system: "JIRA", url: "http://jira.grails.org/browse/GPMYPLUGIN" ]
+    def issueManagement = [ system: "GitHub", url: "https://github.com/SRARAD/db-backup-plugin/issues" ]
 
     // Online location of the plugin's browseable source code.
-//    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
+    def scm = [ url: "https://github.com/SRARAD/db-backup-plugin" ]
 
     def doWithWebDescriptor = { xml ->
         // TODO Implement additions to web.xml (optional), this event occurs before
